@@ -1,7 +1,9 @@
 import React from 'react';
 import { render } from 'react-dom';
-import { Game } from 'containers';
+import { GameContainer } from 'containers';
+import { Provider } from 'react-redux';
+import { store } from './redux';
 
 const root = document.getElementById('root');
 
-render(<Game boardSize={50} playerSize={20} />, root);
+render(<Provider store={store}><GameContainer/></Provider>, root);

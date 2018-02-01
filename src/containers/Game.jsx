@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import {incrementEnemyIndex, generateNewEnemy} from '../redux';
 import axios from 'axios';
 import { GameInfo, Board, Player, Enemy, DebugState } from 'components';
 import { UP, DOWN, LEFT, RIGHT } from 'helpers/constants';
@@ -9,68 +11,56 @@ import { pluck } from 'helpers/utils';
     cloned versions will lack the ability to post
     new high scores.
 */
-// import url from 'api';
 
-const getDefaultState = ({ boardSize, playerSize, highScore = 0 }) => {
-  const half = Math.floor(boardSize / 2) * playerSize;
-  return {
-    size: {
-      board: boardSize,
-      player: playerSize,
-      maxDim: boardSize * playerSize,
-    },
-    positions: {
-      player: {
-        top: half,
-        left: half,
-      },
-      enemies: [],
-    },
-    playerScore: 0,
-    highScore,
-    timeElapsed: 0,
-    enemySpeed: 5,
-    enemyIndex: 0,
-    activeEnemies: 1,
-    baseScore: 10,
-  };
+// actions.js
+export const activateGeod = (geod) => ({
+  type: 'ACTIVATE_GEOD',
+  geod
+});
+
+export const closeGeod = () => ({
+  type: 'CLOSE_GEOD'
+});
+
+// reducers.js
+export const geod = (state = {}, action) => {
+  switch (action.type) {
+    case 'ACTIVATE_GEOD':
+      return action.geod;
+    case 'CLOSE_GEOD':
+      return {};
+    default:
+      return state;
+  }
 };
 
+
 export default class Game extends Component {
+
   constructor(props) {
     super(props);
-    const half = Math.floor(props.boardSize / 2) * props.playerSize;
-    const { boardSize, playerSize } = props;
-    this.state = getDefaultState({ boardSize, playerSize });
   }
 
   placeEnemy = () => {
     // enemies always launch at player
-    const { player, maxDim } = this.state.size;
-    const { player: playerPos } = this.state.positions;
+    const { player, maxDim } = this.props.size;
+    const { player: playerPos } = this.props.positions;
 
     // assign to a random side
     const side = pluck([UP, DOWN, LEFT, RIGHT]);
 
     // generate enemy object
-    const newEnemy = this.generateNewEnemy(playerPos, side);
+    const newEnemy = this.createNewEnemy(playerPos, side);
 
     // add new enemy to state
-    this.setState({
-      positions: {
-        ...this.state.positions,
-        enemies: [...this.state.positions.enemies].concat(newEnemy),
-      }
-    });
+    this.props.generateNewEnemy(newEnemy);
   };
 
-  generateNewEnemy = (position, side) => {
-    this.setState({
-      enemyIndex: this.state.enemyIndex + 1,
-    });
+  createNewEnemy = (position, side) => {
+    this.props.incrementEnemyIndex();
 
-    const newEnemy = { key: this.state.enemyIndex, dir: side };
-    const { maxDim } = this.state.size;
+    const newEnemy = { key: this.props.enemyIndex, dir: side };
+    const { maxDim } = this.props.size;
 
     newEnemy.top = position.top;
     newEnemy.left = maxDim;
@@ -337,3 +327,19 @@ export default class Game extends Component {
     clearInterval(this.state.timeInterval);
   }
 }
+
+const mapStateToProps = (state, ownProps) => ({
+  size: this.state.size,
+  positions: this.state.positions
+
+});
+
+const mapDispatchToProps = {
+  incrementEnemyIndex,
+  generateNewEnemy
+};
+
+export const GameContainer = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Game);
